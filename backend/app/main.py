@@ -4,6 +4,8 @@ from app.config import FRONTEND_URL
 from app.auth.router import router as auth_router
 from app.candidates.router import router as candidates_router
 from app.resume.router import router as resume_router
+from app.recruiters.router import router as recruiters_router
+from app.jobs.router import router as jobs_router
 
 app = FastAPI(
     title="CareerMatch AI",
@@ -24,6 +26,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(candidates_router)
 app.include_router(resume_router)
+app.include_router(recruiters_router)
+app.include_router(jobs_router)
 
 
 @app.get("/")
