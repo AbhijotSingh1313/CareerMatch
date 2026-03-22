@@ -49,6 +49,7 @@ export const candidatesAPI = {
   },
   getResumeAnalysis: () => request("/candidates/resume/analysis"),
   reanalyzeResume: (targetRole = "") => request(`/candidates/resume/reanalyze?target_role=${encodeURIComponent(targetRole)}`, { method: "POST" }),
+  chat: (message, history = []) => request("/candidates/chat", { method: "POST", body: JSON.stringify({ message, history }) }),
 };
 
 // ─── Recruiters ───

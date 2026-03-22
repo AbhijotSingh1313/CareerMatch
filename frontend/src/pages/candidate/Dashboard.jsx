@@ -3,9 +3,55 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { candidatesAPI, matchingAPI, skillsAPI, jobsAPI, feedbackAPI } from "../../services/api";
 import ProfileSetup from "./ProfileSetup";
+import AIChatbot from "../../components/AIChatbot";
 import "./CandidateDash.css";
 
 const TABS = ["Overview", "Job Matches", "Skill Analysis", "Courses", "Resume Checker", "Career Path", "Feedback"];
+
+// ── Streak helpers (localStorage-based) ──
+const STREAK_KEY = "careermatch_streak_dates";
+function getStreakDates() {
+  try { return JSON.parse(localStorage.getItem(STREAK_KEY) || "[]"); } catch { return []; }
+}
+function logStreakActivity() {
+  const today = new Date().toISOString().slice(0, 10);
+  const dates = getStreakDates();
+  if (!dates.includes(today)) {
+    dates.push(today);
+    localStorage.setItem(STREAK_KEY, JSON.stringify(dates));
+  }
+}
+function calcStreak() {
+  const dates = getStreakDates().map(d => d).sort().reverse();
+  if (dates.length === 0) return 0;
+  const toDateStr = d => d.toISOString().slice(0, 10);
+  const today = toDateStr(new Date());
+  const yesterday = toDateStr(new Date(Date.now() - 86400000));
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i - 1]);
+    const curr = new Date(dates[i]);
+    const diff = (prev - curr) / 86400000;
+    if (diff === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+function getWeekActivity() {
+  const dates = getStreakDates();
+  const result = [];
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((day + 6) % 7));
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    result.push(dates.includes(d.toISOString().slice(0, 10)));
+  }
+  return result;
+}
 
 export default function CandidateDashboard() {
   const { user, logout } = useAuth();
@@ -183,8 +229,9 @@ export default function CandidateDashboard() {
         const resumeScore = analysis?.ats_score || 0;
         const jobScore = Math.min(100, appliedCount * 15);
         const learningScore = Math.min(100, courseCount * 12);
-        // Simple streak based on profile data presence
-        const streakDays = (hasResume ? 2 : 0) + (skillCount > 0 ? 1 : 0) + (appliedCount > 0 ? 2 : 0) + (courseCount > 0 ? 2 : 0);
+        // Real streak based on daily course learning activity
+        const streakDays = calcStreak();
+        const weekActive = getWeekActivity();
         return (
         <div>
           {/* Welcome Banner */}
@@ -247,8 +294,8 @@ export default function CandidateDashboard() {
                 </div>
               </div>
               <div className="ov-streak-grid">
-                {[...Array(7)].map((_, i) => (
-                  <div key={i} className={`ov-streak-dot ${i < streakDays ? "active" : ""}`}>{["M","T","W","T","F","S","S"][i]}</div>
+                {["M","T","W","T","F","S","S"].map((label, i) => (
+                  <div key={i} className={`ov-streak-dot ${weekActive[i] ? "active" : ""}`}>{label}</div>
                 ))}
               </div>
               <div className="ov-quick-stats">
@@ -608,7 +655,7 @@ export default function CandidateDashboard() {
                   <h3>{c.name}</h3>
                   <p className="course-provider">{c.provider}</p>
                   {c.reason && <p className="course-reason"> {c.reason}</p>}
-                  <a href={c.url} target="_blank" rel="noreferrer" className="course-link">Open Course →</a>
+                  <a href={c.url} target="_blank" rel="noreferrer" className="course-link" onClick={() => { logStreakActivity(); }}>Open Course →</a>
                 </div>
               ));
             })}
@@ -917,6 +964,7 @@ export default function CandidateDashboard() {
           {feedback.length === 0 && <p className="empty">No feedback received yet.</p>}
         </div>
       )}
+      <AIChatbot />
     </div>
   );
 }

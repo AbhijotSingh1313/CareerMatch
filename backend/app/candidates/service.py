@@ -70,12 +70,12 @@ async def upload_resume(user_id: str, file: UploadFile) -> dict:
     resume_data = {
         "candidate_id": user_id,
         "raw_text": raw_text,
-        "parsed_skills": analysis["skills"],
-        "parsed_education": analysis["education"],
-        "parsed_experience": analysis["experience"],
-        "ats_score": ats_result["score"],
-        "ai_detection_score": ats_result["ai_detection_score"],
-        "suggestions": ats_result["suggestions"],
+        "parsed_skills": analysis.get("skills", []),
+        "parsed_education": analysis.get("education", ""),
+        "parsed_experience": analysis.get("experience", []),
+        "ats_score": ats_result.get("ats_score", 0),
+        "ai_detection_score": ats_result.get("ai_detection_score", 0),
+        "suggestions": ats_result.get("suggestions", []),
     }
 
     supabase_admin.table("resumes").insert(resume_data).execute()

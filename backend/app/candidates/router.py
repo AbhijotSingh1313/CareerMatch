@@ -84,3 +84,68 @@ async def reanalyze_saved_resume(target_role: str = "", user=Depends(get_current
         },
         "ats": ats_result,
     }
+
+
+@router.post("/chat")
+async def chat_with_ai(body: dict, user=Depends(get_current_user)):
+    """AI chatbot that has access to user's profile and resume data."""
+    if user["role"] != "candidate":
+        raise HTTPException(status_code=403, detail="Candidates only")
+
+    message = body.get("message", "").strip()
+    history = body.get("history", [])
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    from app.dependencies import supabase_admin
+    from app.ai_service import ask_gemini
+
+    # Fetch profile context
+    profile = {}
+    try:
+        p = supabase_admin.table("profiles").select("*").eq("id", user["id"]).single().execute()
+        d = supabase_admin.table("candidate_details").select("*").eq("id", user["id"]).single().execute()
+        profile = {**p.data, **d.data}
+    except Exception:
+        pass
+
+    # Fetch resume context
+    resume_info = ""
+    try:
+        r = supabase_admin.table("resumes").select("*").eq(
+            "candidate_id", user["id"]
+        ).order("created_at", desc=True).limit(1).execute()
+        if r.data:
+            rd = r.data[0]
+            resume_info = f"""
+Resume skills: {', '.join(rd.get('parsed_skills', []))}
+Education: {rd.get('parsed_education', 'N/A')}
+ATS Score: {rd.get('ats_score', 'N/A')}/100
+Suggestions: {'; '.join(rd.get('suggestions', [])[:3])}"""
+    except Exception:
+        pass
+
+    # Build system context
+    context = f"""You are CareerMatch AI, a friendly and knowledgeable career assistant.
+You have access to this candidate's profile:
+- Name: {profile.get('full_name', 'Unknown')}
+- Skills: {', '.join(profile.get('skills', [])) or 'Not set'}
+- Career Goal: {profile.get('career_goal', 'Not set')}
+- Education: {profile.get('education', 'Not set')}
+- Experience: {profile.get('experience_years', 0)} years
+- Current Position: {profile.get('current_position', 'Not set')}
+{resume_info}
+
+Help the user with career advice, job search tips, interview prep, skill development, resume improvement, and any career-related questions. Be concise, friendly, and actionable. Keep responses under 200 words unless the user asks for detail."""
+
+    # Build conversation with history
+    conversation = f"SYSTEM: {context}\n\n"
+    for msg in history[-6:]:  # Last 6 messages for context
+        role = "USER" if msg.get("role") == "user" else "ASSISTANT"
+        conversation += f"{role}: {msg.get('content', '')}\n"
+    conversation += f"USER: {message}\nASSISTANT:"
+
+    reply = ask_gemini(conversation)
+
+    return {"reply": reply}
+
