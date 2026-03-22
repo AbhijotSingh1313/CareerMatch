@@ -4,22 +4,36 @@ import json
 
 # Configure Groq client
 client = Groq(api_key=GROQ_API_KEY)
-MODEL = "llama-3.3-70b-versatile"
+# Model priority list (fallback order)
+# Llama 3.3 70B is the best, but has low free tier token limits (100k TPD).
+# Llama 3.1 8B is faster and has much higher limits (30k RPD).
+MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768"
+]
 
 
 def ask_gemini(prompt: str) -> str:
-    """Send a prompt and return the text response (uses Groq/Llama)."""
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=2048,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Groq API error: {e}")
-        return "AI response unavailable."
+    """Send a prompt and return the text response (uses Groq with model fallback)."""
+    for model_name in MODELS:
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=2048,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            err_str = str(e).lower()
+            if "rate_limit_exceeded" in err_str or "429" in err_str:
+                print(f"Groq Rate Limit for {model_name}. Trying next model...")
+                continue
+            print(f"Groq API error ({model_name}): {e}")
+            break
+            
+    return "AI response unavailable due to busy servers."
 
 
 def get_fallback_json(prompt: str) -> dict | list | None:
@@ -131,26 +145,32 @@ def get_fallback_json(prompt: str) -> dict | list | None:
 
 
 def ask_gemini_json(prompt: str) -> dict | list | None:
-    """Send a prompt and parse the JSON response (uses Groq/Llama with JSON mode).
-    Returns fallback mock data if the API call fails."""
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant. Respond ONLY with valid JSON. No markdown, no code blocks, no extra text."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=4096,
-            response_format={"type": "json_object"},
-        )
-        text = response.choices[0].message.content.strip()
-        print(f"[Groq JSON] Got {len(text)} chars response")
-        return json.loads(text)
-    except Exception as e:
-        print(f"Groq API error in ask_gemini_json: {e}")
-        print("[Groq] Returning fallback JSON data...")
-        return get_fallback_json(prompt)
+    """Send a prompt and parse the JSON response (uses Groq/Llama with JSON mode and fallback)."""
+    for model_name in MODELS:
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant. Respond ONLY with valid JSON. No markdown, no code blocks, no extra text."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=4096,
+                response_format={"type": "json_object"},
+            )
+            text = response.choices[0].message.content.strip()
+            print(f"[Groq JSON - {model_name}] Got {len(text)} chars response")
+            return json.loads(text)
+        except Exception as e:
+            err_str = str(e).lower()
+            if "rate_limit_exceeded" in err_str or "429" in err_str:
+                print(f"Groq Rate Limit for {model_name}. Trying next model...")
+                continue
+            print(f"Groq API error in ask_gemini_json ({model_name}): {e}")
+            break
+
+    print("[Groq] No models available. Returning fallback JSON data...")
+    return get_fallback_json(prompt)

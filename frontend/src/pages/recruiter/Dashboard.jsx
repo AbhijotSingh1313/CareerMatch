@@ -146,7 +146,7 @@ export default function RecruiterDashboard() {
 
   return (
     <div className="rdash">
-      <header className="rdash-header">
+      <header className="rdash-header animate-fade">
         <div>
           <h1 className="rdash-title">Recruiter Dashboard</h1>
           <p className="rdash-sub">{profile?.company_name || user.full_name} • {profile?.industry || "Technology"}</p>
@@ -154,13 +154,13 @@ export default function RecruiterDashboard() {
         <button className="logout-btn" onClick={handleLogout}> Logout</button>
       </header>
 
-      <div className="rdash-tabs">
+      <div className="rdash-tabs animate-slide delay-1">
         {TABS.map(t => <button key={t} className={`rdash-tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>{t}{t === "Compare" ? ` (${compareIds.length})` : ""}</button>)}
       </div>
 
       {/* ═══ OVERVIEW ═══ */}
       {tab === "Overview" && (
-        <div>
+        <div className="animate-slide delay-2">
           <div className="rdash-topbar">
             <h2>Active Job Postings</h2>
             <button className="new-job-btn" onClick={() => showForm ? cancelForm() : setShowForm(true)}>

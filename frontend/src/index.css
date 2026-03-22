@@ -2,66 +2,84 @@
 
 /* ─── CSS Custom Properties (Light Theme) ─── */
 :root {
+  /* Colors (HSL for better harmony) */
+  --hue: 238;
+  --accent-primary: hsl(var(--hue), 84%, 67%);
+  --accent-secondary: hsl(271, 91%, 65%);
+  --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  
   --bg-primary: #f8f9fb;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #f0f1f5;
+  --bg-hover: #f1f3f9;
   --bg-input: #ffffff;
-  --bg-overlay: rgba(0, 0, 0, 0.5);
-  --text-primary: #1a1a2e;
-  --text-secondary: #555555;
-  --text-muted: #888888;
-  --text-placeholder: #b0b8c9;
+  --bg-overlay: rgba(15, 23, 42, 0.4);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-placeholder: #94a3b8;
+  
   --border-color: #e2e8f0;
-  --border-light: #eeeeee;
-  --accent-primary: #6366f1;
-  --accent-secondary: #a855f7;
-  --accent-gradient: linear-gradient(135deg, #6c63ff, #a855f7);
-  --success: #16a34a;
+  --border-light: #f1f5f9;
+  
+  --success: #10b981;
   --success-bg: #ecfdf5;
-  --success-border: #bbf7d0;
-  --danger: #dc2626;
+  --success-border: #d1fae5;
+  
+  --danger: #ef4444;
   --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
+  --danger-border: #fee2e2;
+  
   --warning: #f59e0b;
-  --warning-bg: #fef3c7;
-  --warning-border: #fde68a;
-  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --scrollbar-thumb: rgba(99, 102, 241, 0.3);
+  --warning-bg: #fffbeb;
+  --warning-border: #fef3c7;
+  
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+  --card-shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --scrollbar-thumb: rgba(99, 102, 241, 0.2);
+  
+  /* Transitions */
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ─── Dark Theme ─── */
 [data-theme="dark"] {
-  --bg-primary: #0f1117;
-  --bg-secondary: #1a1d27;
-  --bg-card: #1e2130;
-  --bg-hover: #252838;
-  --bg-input: #1a1d27;
-  --bg-overlay: rgba(0, 0, 0, 0.7);
-  --text-primary: #e4e6ef;
-  --text-secondary: #a0a3b5;
-  --text-muted: #6b6f82;
-  --text-placeholder: #4a4e60;
-  --border-color: #2d3045;
-  --border-light: #252838;
+  --bg-primary: #0b0e14;
+  --bg-secondary: #13171f;
+  --bg-card: #1a1f29;
+  --bg-hover: #212836;
+  --bg-input: #13171f;
+  --bg-overlay: rgba(0, 0, 0, 0.75);
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-placeholder: #334155;
+  
+  --border-color: #262c3a;
+  --border-light: #1c2230;
+  
   --accent-primary: #818cf8;
   --accent-secondary: #c084fc;
-  --accent-gradient: linear-gradient(135deg, #818cf8, #c084fc);
-  --success: #4ade80;
-  --success-bg: rgba(74, 222, 128, 0.1);
-  --success-border: rgba(74, 222, 128, 0.25);
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.1);
-  --danger-border: rgba(248, 113, 113, 0.25);
-  --warning: #fbbf24;
-  --warning-bg: rgba(251, 191, 36, 0.1);
-  --warning-border: rgba(251, 191, 36, 0.25);
-  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  --card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --scrollbar-thumb: rgba(129, 140, 248, 0.4);
+  
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.2);
+  
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-border: rgba(239, 68, 68, 0.2);
+  
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.2);
+  
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --scrollbar-thumb: rgba(129, 140, 248, 0.3);
 }
 
+/* ─── Global Base Styles ─── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -70,48 +88,71 @@
 
 html, body, #root {
   height: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: var(--transition-base);
 }
 
-a { text-decoration: none; }
-button { cursor: pointer; }
+a { 
+  text-decoration: none; 
+  color: inherit;
+  transition: var(--transition-fast);
+}
 
-::-webkit-scrollbar { width: 6px; }
+button { 
+  cursor: pointer; 
+  font-family: inherit;
+  transition: var(--transition-fast);
+}
+
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
 
+/* ─── Shared UI Logic ─── */
 .logout-btn {
   padding: 10px 22px; border-radius: 10px; border: 1px solid var(--border-color);
   background: var(--bg-card); color: var(--text-muted); font-size: 14px; font-weight: 500;
-  cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+  transition: var(--transition-base);
 }
-.logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+.logout-btn:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
 
-/* ─── Theme Toggle Button ─── */
 .theme-toggle {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border-color);
+  background: var(--bg-card); color: var(--text-muted); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition-base); flex-shrink: 0;
 }
-.theme-toggle:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-  background: var(--bg-hover);
+.theme-toggle:hover { border-color: var(--accent-primary); color: var(--accent-primary); background: var(--bg-hover); scale: 1.05; }
+
+/* ─── Global Animation Tokens ─── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade { animation: fadeIn 0.4s ease-out backwards; }
+.animate-slide { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.animate-scale { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+/* Stagger layers */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.15s; }
+.delay-3 { animation-delay: 0.2s; }
+.delay-4 { animation-delay: 0.25s; }

@@ -198,7 +198,7 @@ export default function CandidateDashboard() {
       {showSetup && <ProfileSetup profile={profile} onComplete={handleProfileDone} />}
 
       {/* Header */}
-      <header className="cdash-header">
+      <header className="cdash-header animate-fade">
         <div>
           <h1 className="cdash-title">Career Readiness Dashboard</h1>
           <p className="cdash-sub">Welcome back! Track your progress and find your next opportunity.</p>
@@ -210,7 +210,7 @@ export default function CandidateDashboard() {
       </header>
 
       {/* Tabs */}
-      <div className="cdash-tabs">
+      <div className="cdash-tabs animate-slide delay-1">
         {TABS.map(t => (
           <button key={t} className={`cdash-tab ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>
             {t}
@@ -235,7 +235,7 @@ export default function CandidateDashboard() {
         return (
         <div>
           {/* Welcome Banner */}
-          <div className="ov-welcome-card cdash-card">
+          <div className="ov-welcome-card cdash-card animate-slide delay-2">
             <div className="ov-welcome-left">
               <h2 style={{margin: "0 0 4px"}}> Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!</h2>
               <p style={{margin: "0 0 12px", color: "#888", fontSize: 14}}>
@@ -257,7 +257,7 @@ export default function CandidateDashboard() {
             </div>
           </div>
 
-          <div className="cdash-grid-2" style={{marginTop: 20}}>
+          <div className="cdash-grid-2 animate-slide delay-3" style={{marginTop: 20}}>
             {/* Career Readiness Chart */}
             <div className="cdash-card">
               <h3> Career Readiness</h3>
