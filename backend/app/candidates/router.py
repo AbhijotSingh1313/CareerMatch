@@ -52,3 +52,35 @@ async def get_resume_analysis(user=Depends(get_current_user)):
     if not result.data:
         raise HTTPException(status_code=404, detail="No resume analysis found. Upload a resume first.")
     return result.data[0]
+
+
+@router.post("/resume/reanalyze")
+async def reanalyze_saved_resume(target_role: str = "", user=Depends(get_current_user)):
+    """Re-run ATS analysis on already-saved resume with optional target role."""
+    if user["role"] != "candidate":
+        raise HTTPException(status_code=403, detail="Candidates only")
+    from app.dependencies import supabase_admin
+    from app.resume.ats_checker import check_ats_compatibility
+
+    result = supabase_admin.table("resumes").select("*").eq(
+        "candidate_id", user["id"]
+    ).order("created_at", desc=True).limit(1).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="No saved resume found. Upload one first.")
+
+    resume_data = result.data[0]
+    resume_text = resume_data.get("raw_text", "")
+    if not resume_text:
+        raise HTTPException(status_code=400, detail="Saved resume has no text content.")
+
+    ats_result = check_ats_compatibility(resume_text, target_role)
+
+    return {
+        "analysis": {
+            "skills": resume_data.get("parsed_skills", []),
+            "education": resume_data.get("parsed_education", ""),
+            "experience": resume_data.get("parsed_experience", []),
+        },
+        "ats": ats_result,
+    }

@@ -1,10 +1,11 @@
 import spacy
 import re
+from app.ai_service import ask_gemini_json
 
 # Load spaCy English model
 nlp = spacy.load("en_core_web_sm")
 
-# Common tech skills for matching (expandable)
+# Fallback skills list (used if AI fails)
 KNOWN_SKILLS = {
     "python", "java", "javascript", "typescript", "react", "angular", "vue",
     "node.js", "nodejs", "express", "fastapi", "django", "flask", "spring",
@@ -17,52 +18,31 @@ KNOWN_SKILLS = {
     "figma", "photoshop", "ui/ux", "swift", "kotlin", "flutter", "dart",
     "rust", "go", "golang", "c++", "c#", ".net", "ruby", "php", "laravel",
     "next.js", "nuxt.js", "tailwind", "bootstrap", "firebase", "supabase",
-    "elasticsearch", "kafka", "rabbitmq", "nginx", "apache",
-    "excel", "word", "powerpoint", "communication", "leadership",
-    "problem solving", "teamwork", "project management",
+    "excel", "word", "communication", "leadership", "project management",
 }
 
-# Education keywords
 EDUCATION_KEYWORDS = [
     "bachelor", "master", "phd", "b.tech", "m.tech", "b.sc", "m.sc",
-    "bca", "mca", "b.e", "m.e", "mba", "diploma", "certification",
-    "b.s.", "m.s.", "associate", "degree",
+    "bca", "mca", "b.e", "m.e", "mba", "diploma", "degree",
 ]
 
 
-def analyze_resume(text: str) -> dict:
-    """
-    Analyze resume text using spaCy NLP and pattern matching.
-    Returns structured data: skills, education, experience.
-    """
+def _fallback_analyze(text: str) -> dict:
+    """Fallback analysis using regex + keyword matching if AI fails."""
     text_lower = text.lower()
-    doc = nlp(text)
 
-    # ─── Extract Skills ───
-    found_skills = []
-    for skill in KNOWN_SKILLS:
-        if skill in text_lower:
-            found_skills.append(skill.title() if len(skill) > 3 else skill.upper())
+    found_skills = sorted({
+        skill.title() if len(skill) > 3 else skill.upper()
+        for skill in KNOWN_SKILLS if skill in text_lower
+    })
 
-    # Deduplicate
-    found_skills = sorted(set(found_skills))
+    education_lines = [
+        line.strip() for line in text.split("\n")
+        if any(kw in line.lower() for kw in EDUCATION_KEYWORDS)
+    ]
 
-    # ─── Extract Education ───
-    education_lines = []
-    for line in text.split("\n"):
-        line_lower = line.strip().lower()
-        if any(kw in line_lower for kw in EDUCATION_KEYWORDS):
-            education_lines.append(line.strip())
-
-    education = "; ".join(education_lines) if education_lines else "Not detected"
-
-    # ─── Extract Experience ───
     experience_entries = []
-    # Pattern: look for year ranges like "2020 - 2023" or "2020 - Present"
-    year_pattern = re.compile(
-        r"(20\d{2})\s*[-–—]\s*(20\d{2}|present|current)",
-        re.IGNORECASE,
-    )
+    year_pattern = re.compile(r"(20\d{2})\s*[-–—]\s*(20\d{2}|present|current)", re.IGNORECASE)
     lines = text.split("\n")
     for i, line in enumerate(lines):
         match = year_pattern.search(line)
@@ -70,22 +50,50 @@ def analyze_resume(text: str) -> dict:
             start_year = int(match.group(1))
             end_raw = match.group(2).lower()
             end_year = 2026 if end_raw in ("present", "current") else int(end_raw)
-            years = end_year - start_year
-
-            # Try to grab the job title from the same or previous line
-            title_line = line.strip()
-            if i > 0 and len(lines[i - 1].strip()) > 3:
-                title_line = lines[i - 1].strip()
-
+            title_line = lines[i - 1].strip() if i > 0 and len(lines[i - 1].strip()) > 3 else line.strip()
             experience_entries.append({
-                "title": title_line[:100],
-                "years": years,
-                "start": start_year,
-                "end": end_raw,
+                "title": title_line[:100], "years": end_year - start_year,
+                "start": start_year, "end": end_raw,
             })
 
     return {
         "skills": found_skills,
-        "education": education,
+        "education": "; ".join(education_lines) if education_lines else "Not detected",
         "experience": experience_entries,
     }
+
+
+def analyze_resume(text: str) -> dict:
+    """
+    Analyze resume text using Gemini AI.
+    Falls back to regex/keyword matching if AI is unavailable.
+    """
+    prompt = f"""Analyze the following resume text and extract structured information.
+
+RESUME TEXT:
+{text[:4000]}
+
+Return a JSON object with exactly these keys:
+{{
+    "skills": ["list of technical and soft skills found"],
+    "education": "education summary as a single string",
+    "experience": [
+        {{"title": "job title or role", "company": "company name", "years": number_of_years, "start": start_year, "end": "end_year or present"}}
+    ],
+    "summary": "A 2-3 sentence professional summary of this candidate"
+}}
+
+Be thorough — extract ALL skills mentioned including programming languages, frameworks, tools, soft skills, and domain expertise."""
+
+    result = ask_gemini_json(prompt)
+
+    if result and "skills" in result:
+        return {
+            "skills": result.get("skills", []),
+            "education": result.get("education", "Not detected"),
+            "experience": result.get("experience", []),
+            "summary": result.get("summary", ""),
+        }
+
+    # Fallback to rule-based if AI fails
+    return _fallback_analyze(text)

@@ -3,6 +3,7 @@ from app.auth.service import get_current_user
 from app.jobs.service import (
     create_job, get_recruiter_jobs, get_job, update_job,
     delete_job, update_job_status, get_all_open_jobs, apply_to_job,
+    save_job, unsave_job, get_saved_jobs,
 )
 from app.jobs.schemas import JobCreate, JobUpdate, JobResponse
 from typing import List
@@ -67,6 +68,14 @@ async def list_open_jobs():
     return get_all_open_jobs()
 
 
+@router.get("/saved")
+async def list_saved(user=Depends(get_current_user)):
+    """Get list of saved/bookmarked job IDs."""
+    if user["role"] != "candidate":
+        raise HTTPException(status_code=403, detail="Candidates only")
+    return get_saved_jobs(user["id"])
+
+
 @router.get("/{job_id}", response_model=JobResponse)
 async def get_single_job(job_id: str):
     """Get a single job posting details (public)."""
@@ -85,3 +94,19 @@ async def apply(job_id: str, user=Depends(get_current_user)):
         return apply_to_job(job_id, user["id"])
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{job_id}/save")
+async def bookmark_job(job_id: str, user=Depends(get_current_user)):
+    """Save/bookmark a job (candidate only)."""
+    if user["role"] != "candidate":
+        raise HTTPException(status_code=403, detail="Candidates only")
+    return save_job(user["id"], job_id)
+
+
+@router.delete("/{job_id}/save")
+async def unbookmark_job(job_id: str, user=Depends(get_current_user)):
+    """Remove bookmark (candidate only)."""
+    if user["role"] != "candidate":
+        raise HTTPException(status_code=403, detail="Candidates only")
+    return unsave_job(user["id"], job_id)

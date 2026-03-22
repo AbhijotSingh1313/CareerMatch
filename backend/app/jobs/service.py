@@ -77,3 +77,33 @@ def apply_to_job(job_id: str, candidate_id: str) -> dict:
         "status": "pending",
     }).execute()
     return {"message": "Application submitted successfully", "application": result.data[0]}
+
+
+def save_job(candidate_id: str, job_id: str) -> dict:
+    """Bookmark a job for later."""
+    existing = supabase_admin.table("saved_jobs").select("id").eq(
+        "candidate_id", candidate_id
+    ).eq("job_id", job_id).execute()
+    if existing.data:
+        return {"message": "Already saved"}
+    supabase_admin.table("saved_jobs").insert({
+        "candidate_id": candidate_id,
+        "job_id": job_id,
+    }).execute()
+    return {"message": "Job saved"}
+
+
+def unsave_job(candidate_id: str, job_id: str) -> dict:
+    """Remove bookmark."""
+    supabase_admin.table("saved_jobs").delete().eq(
+        "candidate_id", candidate_id
+    ).eq("job_id", job_id).execute()
+    return {"message": "Job removed from saved"}
+
+
+def get_saved_jobs(candidate_id: str) -> list:
+    """Get list of saved job IDs."""
+    result = supabase_admin.table("saved_jobs").select("job_id").eq(
+        "candidate_id", candidate_id
+    ).execute()
+    return [row["job_id"] for row in result.data]

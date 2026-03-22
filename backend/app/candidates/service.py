@@ -13,7 +13,13 @@ def get_candidate_profile(user_id: str) -> dict:
         "id", user_id
     ).single().execute()
 
-    return {**profile.data, **details.data}
+    merged = {**profile.data, **details.data}
+    # Check if profile is complete (has at least skills and career_goal)
+    merged["profile_complete"] = bool(
+        merged.get("skills") and len(merged["skills"]) > 0
+        and merged.get("career_goal")
+    )
+    return merged
 
 
 def update_candidate_profile(user_id: str, data: CandidateProfileUpdate) -> dict:
@@ -29,7 +35,7 @@ def update_candidate_profile(user_id: str, data: CandidateProfileUpdate) -> dict
         ).execute()
 
     # Fields that go into candidate_details table
-    detail_fields = {"skills", "experience_years", "education", "career_goal", "preferred_companies"}
+    detail_fields = {"skills", "experience_years", "education", "current_position", "career_goal", "preferred_companies"}
     detail_update = {k: v for k, v in update_data.items() if k in detail_fields}
     if detail_update:
         supabase_admin.table("candidate_details").update(detail_update).eq(

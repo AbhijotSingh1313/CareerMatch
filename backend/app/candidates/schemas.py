@@ -8,6 +8,7 @@ class CandidateProfileUpdate(BaseModel):
     skills: Optional[List[str]] = None
     experience_years: Optional[float] = None
     education: Optional[str] = None
+    current_position: Optional[str] = None
     career_goal: Optional[str] = None
     preferred_companies: Optional[List[str]] = None
 
@@ -21,5 +22,7 @@ class CandidateProfileResponse(BaseModel):
     skills: Optional[List[str]] = None
     experience_years: Optional[float] = None
     education: Optional[str] = None
+    current_position: Optional[str] = None
     career_goal: Optional[str] = None
     preferred_companies: Optional[List[str]] = None
+    profile_complete: Optional[bool] = False

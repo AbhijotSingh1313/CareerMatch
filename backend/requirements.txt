@@ -7,3 +7,4 @@ spacy
 pydantic[email]
 python-multipart
 httpx
+google-generativeai
